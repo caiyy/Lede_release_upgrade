@@ -1,0 +1,243 @@
+name: build-lede
+
+on: 
+  push:
+    branches: 
+      - master
+  schedule:
+    - cron: 0 16 * * *
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: 开始工作了
+      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=开始工作了" "http://wxpusher.zjiecode.com/api/send/message/"
+    - name: Checkout
+      uses: actions/checkout@master
+    - name: 初始化编译环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在初始化编译环境." "http://wxpusher.zjiecode.com/api/send/message/"
+        echo "正在删除文件,请稍等..."
+        sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d/*
+        sudo swapoff /swapfile
+        sudo rm -f /swapfile
+        #docker rmi `docker images -q`
+        #sudo -E apt-get -q purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler gzip
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        curl -fsSL https://raw.githubusercontent.com/P3TERX/dotfiles/master/.bashrc >> ~/.bashrc
+        sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+    - name: 拉取最新源码
+      env: 
+        REPO_URL: https://github.com/coolsnowwolf/lede
+        REPO_BRANCH: master
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=拉取最新的代码" "http://wxpusher.zjiecode.com/api/send/message/"
+        git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+    - name: 创建第三方插件目录
+      run: cd openwrt/package && mkdir openwrt-packages
+
+    - name: 删除原Argon主题,添加Argon最新版主题
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=删除原Argon主题,添加Argon最新版主题" "http://wxpusher.zjiecode.com/api/send/message/"
+        sudo rm -rf openwrt/package/lean/luci-theme-argon
+        cd openwrt/package/openwrt-packages
+        git clone https://github.com/jerrykuku/luci-theme-argon.git
+    - name: 添加Server酱,微信推送插件
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=添加Server酱,微信推送插件" "http://wxpusher.zjiecode.com/api/send/message/"
+        cd openwrt/package/openwrt-packages && git clone https://github.com/tty228/luci-app-serverchan
+      
+    - name: 更新源(Update feeds)
+      run: cd openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a
+      
+    - name: 删除verysync
+      run: |
+        sudo rm -rf openwrt/package/lean/verysync
+        sudo rm -rf openwrt/package/lean/luci-app-verysync
+    - name: 创建配置文件 (Costom configure file)
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在创建配置文件" "http://wxpusher.zjiecode.com/api/send/message/"
+        # mk openwrt
+        cd openwrt
+        rm -f ./.config*
+        touch ./.config
+        # 编译x64固件:
+        cat >> .config <<EOF
+        CONFIG_TARGET_x86=y
+        CONFIG_TARGET_x86_64=y
+        CONFIG_TARGET_x86_64_Generic=y
+        EOF
+        # 固件压缩:
+        # cat >> .config <<EOF
+        # CONFIG_TARGET_IMAGES_GZIP=y
+        # EOF
+        # 编译UEFI固件:
+        # cat >> .config <<EOF
+        # CONFIG_EFI_IMAGES=y
+        # EOF
+        # IPv6支持:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
+        CONFIG_PACKAGE_ipv6helper=y
+        EOF
+        # 多文件系统支持:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_kmod-fs-nfs=y
+        CONFIG_PACKAGE_kmod-fs-nfs-common=y
+        CONFIG_PACKAGE_kmod-fs-nfs-v3=y
+        CONFIG_PACKAGE_kmod-fs-nfs-v4=y
+        CONFIG_PACKAGE_kmod-fs-ntfs=y
+        CONFIG_PACKAGE_kmod-fs-squashfs=y
+        EOF
+        # USB3.0支持:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_kmod-usb-ohci=y
+        CONFIG_PACKAGE_kmod-usb-ohci-pci=y
+        CONFIG_PACKAGE_kmod-usb2=y
+        CONFIG_PACKAGE_kmod-usb2-pci=y
+        CONFIG_PACKAGE_kmod-usb3=y
+        EOF
+        # 常用LuCI插件选择:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_luci-app-smartdns=y
+        CONFIG_PACKAGE_luci-app-adbyby-plus=y
+        CONFIG_PACKAGE_luci-app-aria2=y
+        # CONFIG_PACKAGE_luci-app-baidupcs-web=y
+        # CONFIG_PACKAGE_luci-app-docker=y
+        CONFIG_PACKAGE_luci-app-frpc=y
+        # CONFIG_PACKAGE_luci-app-kodexplorer=y
+        CONFIG_PACKAGE_luci-app-minidlna=y
+        # CONFIG_PACKAGE_luci-app-openvpn=y
+        # CONFIG_PACKAGE_luci-app-openvpn-server=y
+        # CONFIG_PACKAGE_luci-app-qbittorrent=y
+        CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Kcptun=y
+        CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks=y
+        CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_ShadowsocksR_Server=y
+        CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_ShadowsocksR_Socks=y
+        CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_V2ray=y
+        CONFIG_PACKAGE_luci-app-ttyd=y
+        CONFIG_PACKAGE_luci-app-v2ray-server=y
+        CONFIG_PACKAGE_luci-app-verysync=y
+        CONFIG_PACKAGE_luci-app-webadmin=y
+        CONFIG_PACKAGE_luci-app-wireguard=y
+        CONFIG_PACKAGE_luci-app-wrtbwmon=y
+        EOF
+        # Caiyy定制插件
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_luci-app-statistics=y
+        CONFIG_PACKAGE_luci-app-vnstat=y
+        CONFIG_PACKAGE_luci-app-arpbind=y
+        CONFIG_PACKAGE_luci-app-attendedsysupgrade=y
+        CONFIG_PACKAGE_luci-app-dnspod=y
+        CONFIG_PACKAGE_luci-app-nlbwmon=y
+        CONFIG_PACKAGE_luci-app-serverchan=y
+        EOF
+        # LuCI主题:
+        cat >> .config <<EOF
+        # CONFIG_PACKAGE_luci-theme-netgear=y
+        CONFIG_PACKAGE_luci-theme-argon=y
+        EOF
+        # 常用软件包:
+        cat >> .config <<EOF
+        CONFIG_PACKAGE_curl=y
+        CONFIG_PACKAGE_htop=y
+        CONFIG_PACKAGE_nano=y
+        CONFIG_PACKAGE_screen=y
+        CONFIG_PACKAGE_tree=y
+        CONFIG_PACKAGE_vim-fuller=y
+        CONFIG_PACKAGE_wget=y
+        EOF
+        # 取消编译VMware镜像以及镜像填充 (不要删除被缩进的注释符号):
+        cat >> .config <<EOF
+        # CONFIG_TARGET_IMAGES_PAD is not set
+        # CONFIG_VMDK_IMAGES is not set
+        EOF
+        # 
+        # ========================固件定制部分结束========================
+        # 
+        sed -i 's/^[ \t]*//g' .config
+        make defconfig
+#    - name: SSH connection to Actions
+#      uses: P3TERX/debugger-action@master
+    - name: 下载固件包(Download package)
+      run: |
+        cd openwrt && make download -j8
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+    - name: 多线程编译固件
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在编译.预计编译时长2小时30分钟.请耐心等待." "http://wxpusher.zjiecode.com/api/send/message/"
+        cd openwrt
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc)
+    - name: 通知编译完成
+      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件编译完成!" "http://wxpusher.zjiecode.com/api/send/message/"
+    - name: 单线程编译固件
+      if: failure()
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=多线程编译失败,正在尝试单线程编译." "http://wxpusher.zjiecode.com/api/send/message/"
+        cd openwrt
+        make -j1 V=s
+    - name: 只打包特定固件
+      run: |
+        rm -rf ./artifact/
+        mkdir -p ./artifact/
+        find ./openwrt/bin/targets/ -name "*combined*img*" | xargs -i mv -f {} ./artifact/
+        find ./openwrt/bin/targets/ -name "sha256sums" | xargs -i mv -f {} ./artifact/
+    - name: 上传特定固件
+      uses: actions/upload-artifact@master
+      with:
+        name: X64
+        path: ./artifact/
+#    - name: 通知上传FTP服务器
+#      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在上传到FTP服务器!" "http://wxpusher.zjiecode.com/api/send/message/"
+#    - name: 上传固件到FTP服务器
+#      uses: SamKirkland/FTP-Deploy-Action@2.0.0
+#      env:
+#        FTP_SERVER: url
+#        FTP_USERNAME: user
+#        FTP_PASSWORD: password
+#        LOCAL_DIR: ./artifact/
+        # ARGS: --delete
+#    - name: 通知FTP上传完成
+#      run: |
+#        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传完成!" "http://wxpusher.zjiecode.com/api/send/message/"
+
+    - name: 上传固件到路由器
+      uses: SamKirkland/FTP-Deploy-Action@2.0.0
+      env:
+        FTP_SERVER: ${{secrets.router_ip}}
+        PORT: ${{secrets.router_ftp_port}}
+        FTP_USERNAME: ${{secrets.user}}
+        FTP_PASSWORD: ${{secrets.pass}}
+        LOCAL_DIR: ./artifact/
+        # ARGS: --delete
+    - name: 通知路由器固件上传完成
+      run: |
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传到路由器完成!" "http://wxpusher.zjiecode.com/api/send/message/"
+    - name: 提交刷机任务
+      uses: fifsky/ssh-action@master
+      # 步骤出错的时候也继续执行,ps:刷机命令执行的时候,路由器会断开连接,必定出错...
+      continue-on-error: true
+      with:
+        host: ${{secrets.router_ip}}
+        port: ${{secrets.router_ssh_port}}
+        user: ${{secrets.user}}
+        pass: ${{secrets.pass}}
+        command: |
+          cd /tmp/
+          curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
+          sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
+          firmware_sha256sum=`sha256sum "openwrt-x86-64-combined-squashfs.img"`
+          sha256sum=${sha256sum/\*/ }
+          if [ "$sha256sum" == "$firmware_sha256sum" ];
+          then
+            echo "caiyy_yes"
+            curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件验证成功,提交刷机任务完成!" "http://wxpusher.zjiecode.com/api/send/message/" 
+            sysupgrade -v openwrt-x86-64-combined-squashfs.img
+          fi
