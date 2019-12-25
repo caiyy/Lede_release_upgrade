@@ -232,6 +232,7 @@ jobs:
         command: |
           cd /tmp/
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
+          opkg install coreutils-sha256sum
           sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
           firmware_sha256sum=`sha256sum "openwrt-x86-64-combined-squashfs.img"`
           sha256sum=${sha256sum/\*/ }
