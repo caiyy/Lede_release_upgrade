@@ -257,3 +257,20 @@ jobs:
             curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件验证成功,提交刷机任务完成!" "http://wxpusher.zjiecode.com/api/send/message/" 
             sysupgrade -v openwrt-x86-64-combined-squashfs.img
           fi
+    - name: 延迟1分钟
+      run: sleep 5m
+    - name: 重连路由并设置主题
+      uses: fifsky/ssh-action@master
+      continue-on-error: true
+      with:
+        host: ${{secrets.router_ip}}
+        port: ${{secrets.router_ssh_port}}
+        user: ${{secrets.router_user}}
+        pass: ${{secrets.router_pass}}
+        command: |
+          uci batch <<-EOF
+            set luci.themes.Argon=/luci-static/argon
+            set luci.main.mediaurlbase=/luci-static/argon
+            commit luci
+          EOF
+          exit 0
