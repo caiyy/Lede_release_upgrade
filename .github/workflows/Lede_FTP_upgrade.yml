@@ -199,9 +199,9 @@ jobs:
     - name: 上传固件到FTP服务器
       uses: SamKirkland/FTP-Deploy-Action@2.0.0
       env:
-        FTP_SERVER: url
-        FTP_USERNAME: user
-        FTP_PASSWORD: password
+        FTP_SERVER: ${{secrets.server_ip}}
+        FTP_USERNAME: ${{secrets.server_user}}
+        FTP_PASSWORD: ${{secrets.server_pass}}
         LOCAL_DIR: ./artifact/
        # ARGS: --delete
     - name: 通知FTP上传完成
