@@ -132,7 +132,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-statistics=y
         CONFIG_PACKAGE_luci-app-vnstat=y
         CONFIG_PACKAGE_luci-app-arpbind=y
-        CONFIG_PACKAGE_luci-app-attendedsysupgrade=y
+        # CONFIG_PACKAGE_luci-app-attendedsysupgrade=y
         CONFIG_PACKAGE_luci-app-dnspod=y
         CONFIG_PACKAGE_luci-app-nlbwmon=y
         CONFIG_PACKAGE_luci-app-serverchan=y
