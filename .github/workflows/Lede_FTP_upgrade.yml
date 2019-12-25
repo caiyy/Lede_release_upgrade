@@ -47,6 +47,7 @@ jobs:
         sudo rm -rf openwrt/package/lean/luci-theme-argon
         cd openwrt/package/openwrt-packages
         git clone https://github.com/jerrykuku/luci-theme-argon.git
+        git clone https://github.com/rufengsuixing/luci-app-adguardhome.git
     - name: 添加Server酱,微信推送插件
       run: |
         curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=添加Server酱,微信推送插件" "http://wxpusher.zjiecode.com/api/send/message/"
@@ -136,6 +137,7 @@ jobs:
         CONFIG_PACKAGE_luci-app-dnspod=y
         CONFIG_PACKAGE_luci-app-nlbwmon=y
         CONFIG_PACKAGE_luci-app-serverchan=y
+        CONFIG_PACKAGE_luci-app-adguardhome=y
         EOF
         # LuCI主题:
         cat >> .config <<EOF
@@ -194,32 +196,36 @@ jobs:
       with:
         name: X64
         path: ./artifact/
-    - name: 通知上传FTP服务器
-      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在上传到FTP服务器!" "http://wxpusher.zjiecode.com/api/send/message/"
-    - name: 上传固件到FTP服务器
-      uses: SamKirkland/FTP-Deploy-Action@2.0.0
-      env:
-        FTP_SERVER: ${{secrets.server_ip}}
-        FTP_USERNAME: ${{secrets.server_user}}
-        FTP_PASSWORD: ${{secrets.server_pass}}
-        LOCAL_DIR: ./artifact/
-       # ARGS: --delete
-    - name: 通知FTP上传完成
-      run: |
-        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传完成!" "http://wxpusher.zjiecode.com/api/send/message/"
 
-#    - name: 上传固件到路由器
+# 上传固件到腾讯云COS
+    - name: 设置Python版本为2.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 2.7
+    - name: 正在搭建COS环境
+      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在搭建COS环境!" "http://wxpusher.zjiecode.com/api/send/message/"
+    - name: 搭建COS环境
+      run: |
+        python -m pip install --upgrade pip
+        pip install coscmd
+        coscmd config -a ${{secrets.Coscmd_Id}} -s ${{secrets.Coscmd_Key}} -b ${{secrets.Coscmd_Name}} -r ap-guangzhou -m 10
+    - name: 上传固件到腾讯云COS
+      run: coscmd upload -r ./artifact/ /
+# 上传固件到FTP
+#    - name: 通知上传FTP服务器
+#      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在上传到FTP服务器!" "http://wxpusher.zjiecode.com/api/send/message/"
+#    - name: 上传固件到FTP服务器
 #      uses: SamKirkland/FTP-Deploy-Action@2.0.0
 #      env:
-#        FTP_SERVER: ${{secrets.router_ip}}
-#        PORT: ${{secrets.router_ftp_port}}
-#        FTP_USERNAME: ${{secrets.router_user}}
-#        FTP_PASSWORD: ${{secrets.router_pass}}
+#        FTP_SERVER: ${{secrets.server_ip}}
+#        FTP_USERNAME: ${{secrets.server_user}}
+#        FTP_PASSWORD: ${{secrets.server_pass}}
 #        LOCAL_DIR: ./artifact/
-#        # ARGS: --delete
-#    - name: 通知路由器固件上传完成
+#       # ARGS: --delete
+#    - name: 通知FTP上传完成
 #      run: |
-#        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传到路由器完成!" "http://wxpusher.zjiecode.com/api/send/message/"
+#        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传完成!" "http://wxpusher.zjiecode.com/api/send/message/"
+
     - name: 提交刷机任务
       uses: fifsky/ssh-action@master
       # 步骤出错的时候也继续执行,ps:刷机命令执行的时候,路由器会断开连接,必定出错...
@@ -233,8 +239,13 @@ jobs:
           cd /tmp/
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在下载固件到路由器.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           rm openwrt-x86-64-combined-squashfs.img
-          wget https://git.caiyy.cn/openwrt-x86-64-combined-squashfs.img
-          wget https://git.caiyy.cn/sha256sums
+          # 从FTP服务器下载固件
+          # wget https://git.caiyy.cn/openwrt-x86-64-combined-squashfs.img
+          # wget https://git.caiyy.cn/sha256sums
+          # 从腾讯COS下载固件
+          wget https://${{secrets.Coscmd_Name}}.cos.ap-guangzhou.myqcloud.com/openwrt-x86-64-combined-squashfs.img
+          wget https://${{secrets.Coscmd_Name}}.cos.ap-guangzhou.myqcloud.com/sha256sums
+          # 验证固件的完整性
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           opkg install coreutils-sha256sum
           sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
@@ -242,7 +253,7 @@ jobs:
           sha256sum=${sha256sum/\*/ }
           if [ "$sha256sum" == "$firmware_sha256sum" ];
           then
-            echo "caiyy_yes"
+            echo "固件验证通过"
             curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件验证成功,提交刷机任务完成!" "http://wxpusher.zjiecode.com/api/send/message/" 
             sysupgrade -v openwrt-x86-64-combined-squashfs.img
           fi
