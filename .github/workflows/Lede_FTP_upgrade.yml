@@ -213,8 +213,8 @@ jobs:
       env:
         FTP_SERVER: ${{secrets.router_ip}}
         PORT: ${{secrets.router_ftp_port}}
-        FTP_USERNAME: ${{secrets.user}}
-        FTP_PASSWORD: ${{secrets.pass}}
+        FTP_USERNAME: ${{secrets.router_user}}
+        FTP_PASSWORD: ${{secrets.router_pass}}
         LOCAL_DIR: ./artifact/
         # ARGS: --delete
     - name: 通知路由器固件上传完成
@@ -227,8 +227,8 @@ jobs:
       with:
         host: ${{secrets.router_ip}}
         port: ${{secrets.router_ssh_port}}
-        user: ${{secrets.user}}
-        pass: ${{secrets.pass}}
+        user: ${{secrets.router_user}}
+        pass: ${{secrets.router_pass}}
         command: |
           cd /tmp/
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
