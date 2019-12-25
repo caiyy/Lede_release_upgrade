@@ -194,32 +194,32 @@ jobs:
       with:
         name: X64
         path: ./artifact/
-#    - name: 通知上传FTP服务器
-#      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在上传到FTP服务器!" "http://wxpusher.zjiecode.com/api/send/message/"
-#    - name: 上传固件到FTP服务器
-#      uses: SamKirkland/FTP-Deploy-Action@2.0.0
-#      env:
-#        FTP_SERVER: url
-#        FTP_USERNAME: user
-#        FTP_PASSWORD: password
-#        LOCAL_DIR: ./artifact/
-        # ARGS: --delete
-#    - name: 通知FTP上传完成
-#      run: |
-#        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传完成!" "http://wxpusher.zjiecode.com/api/send/message/"
-
-    - name: 上传固件到路由器
+    - name: 通知上传FTP服务器
+      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在上传到FTP服务器!" "http://wxpusher.zjiecode.com/api/send/message/"
+    - name: 上传固件到FTP服务器
       uses: SamKirkland/FTP-Deploy-Action@2.0.0
       env:
-        FTP_SERVER: ${{secrets.router_ip}}
-        PORT: ${{secrets.router_ftp_port}}
-        FTP_USERNAME: ${{secrets.router_user}}
-        FTP_PASSWORD: ${{secrets.router_pass}}
+        FTP_SERVER: url
+        FTP_USERNAME: user
+        FTP_PASSWORD: password
         LOCAL_DIR: ./artifact/
-        # ARGS: --delete
-    - name: 通知路由器固件上传完成
+       # ARGS: --delete
+    - name: 通知FTP上传完成
       run: |
-        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传到路由器完成!" "http://wxpusher.zjiecode.com/api/send/message/"
+        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传完成!" "http://wxpusher.zjiecode.com/api/send/message/"
+
+#    - name: 上传固件到路由器
+#      uses: SamKirkland/FTP-Deploy-Action@2.0.0
+#      env:
+#        FTP_SERVER: ${{secrets.router_ip}}
+#        PORT: ${{secrets.router_ftp_port}}
+#        FTP_USERNAME: ${{secrets.router_user}}
+#        FTP_PASSWORD: ${{secrets.router_pass}}
+#        LOCAL_DIR: ./artifact/
+#        # ARGS: --delete
+#    - name: 通知路由器固件上传完成
+#      run: |
+#        curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件上传到路由器完成!" "http://wxpusher.zjiecode.com/api/send/message/"
     - name: 提交刷机任务
       uses: fifsky/ssh-action@master
       # 步骤出错的时候也继续执行,ps:刷机命令执行的时候,路由器会断开连接,必定出错...
@@ -231,6 +231,10 @@ jobs:
         pass: ${{secrets.router_pass}}
         command: |
           cd /tmp/
+          curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在下载固件到路由器.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
+          rm openwrt-x86-64-combined-squashfs.img
+          wget https://git.caiyy.cn/openwrt-x86-64-combined-squashfs.img
+          wget https://git.caiyy.cn/sha256sums
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           opkg install coreutils-sha256sum
           sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
