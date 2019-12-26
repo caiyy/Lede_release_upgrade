@@ -13,17 +13,6 @@ jobs:
       run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=开始工作了" "http://wxpusher.zjiecode.com/api/send/message/"
     - name: Checkout
       uses: actions/checkout@master
-    - name: 设置Python版本为2.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 2.7
-    - name: 正在搭建COS环境
-      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在搭建COS环境!" "http://wxpusher.zjiecode.com/api/send/message/"
-    - name: 搭建COS环境
-      run: |
-        python -m pip install --upgrade pip
-        pip install coscmd
-        coscmd config -a ${{secrets.Coscmd_Id}} -s ${{secrets.Coscmd_Key}} -b ${{secrets.Coscmd_Name}} -r ap-guangzhou -m 10
     - name: 初始化编译环境
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -111,6 +100,17 @@ jobs:
       with:
         name: X64
         path: ./artifact/
+    - name: 设置Python版本为2.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 2.7
+    - name: 正在搭建COS环境
+      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在搭建COS环境!" "http://wxpusher.zjiecode.com/api/send/message/"
+    - name: 搭建COS环境
+      run: |
+        python -m pip install --upgrade pip
+        pip install coscmd
+        coscmd config -a ${{secrets.Coscmd_Id}} -s ${{secrets.Coscmd_Key}} -b ${{secrets.Coscmd_Name}} -r ap-guangzhou -m 10
     - name: 上传固件到腾讯云COS
       run: coscmd upload -r ./artifact/ /
     # 使用SSH链接路由提并执行下面的命令
@@ -157,8 +157,6 @@ jobs:
         pass: ${{secrets.router_pass}}
         command: |
           uci batch <<-EOF
-            set luci.themes.Argon=/luci-static/argon
             set luci.main.mediaurlbase=/luci-static/argon
-            commit luci
           EOF
           exit 0
