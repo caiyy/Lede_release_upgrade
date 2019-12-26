@@ -194,7 +194,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
         TAG_NAME: "OpenWrtX64"
         NAME: "OpenWrtX64"
-        ASSET_PATH: ./artifact/
+        ASSET_PATH: ./openwrt/bin/targets/
     - name: 只打包特定固件
       run: |
         rm -rf ./artifact/
