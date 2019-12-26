@@ -64,7 +64,7 @@ jobs:
         git clone https://github.com/jerrykuku/luci-theme-argon.git
         # 添加第三方插件
         git clone https://github.com/rufengsuixing/luci-app-adguardhome.git
-        git clone https://github.com/tty228/luci-app-serverchan.git
+        git clone https://github.com/tty228/luci-app-serverchan
     - name: 更新源(Update feeds)
       run: cd openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a
 
