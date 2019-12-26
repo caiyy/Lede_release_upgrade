@@ -257,11 +257,10 @@ jobs:
             curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件验证成功,提交刷机任务完成!" "http://wxpusher.zjiecode.com/api/send/message/" 
             sysupgrade -v openwrt-x86-64-combined-squashfs.img
           fi
-    - name: 延迟1分钟
+    - name: 延迟5分钟
       run: sleep 5m
     - name: 重连路由并设置主题
       uses: fifsky/ssh-action@master
-      continue-on-error: true
       with:
         host: ${{secrets.router_ip}}
         port: ${{secrets.router_ssh_port}}
