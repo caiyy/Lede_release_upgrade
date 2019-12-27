@@ -187,19 +187,15 @@ jobs:
       if: success()
       run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件编译完成!" "http://wxpusher.zjiecode.com/api/send/message/"
     # 以上编译完成
-    - name: 打包固件
+#    - name: 打包固件
+#      run: |
+#        rm -rf ./caiyy/
+#        mkdir -p ./caiyy/
+#        tar cvf - ./openwrt/bin/ | gzip-9c > ./caiyy/backup.tar.gz
+
+    - name: 设置发布名称
       run: |
-        rm -rf ./caiyy/
-        mkdir -p ./caiyy/
-        tar cvf - ./openwrt/bin/ | gzip-9c > ./caiyy/backup.tar.gz
-    - name: 发布固件到Releases
-      uses: caiyy/action-release@master
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        TAG_NAME: "OpenWrtX64"
-        NAME: "OpenWrtX64"
-        ASSET_PATH: ./caiyy/
+        echo "::set-env name=FILENAME::$(echo "OpenWrt-Firmware-date -d "+8 hour"%Y%m%d-%%H%M%S")"
     - name: 只打包特定固件
       run: |
         rm -rf ./artifact/
@@ -209,8 +205,18 @@ jobs:
     - name: 上传特定固件
       uses: actions/upload-artifact@master
       with:
-        name: X64
+        name: ${{ env.FILENAME }}
         path: ./artifact/
+    - name: 发布固件到Releases
+      uses: caiyy/action-release@master
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        TAG_NAME: ${{ env.FILENAME }}
+        NAME: ${{ env.FILENAME }}
+        # TAG_NAME: "OpenWrtX64.1"
+        # NAME: "OpenWrtX64.1"
+        ASSET_PATH: ./artifact/
     - name: 设置Python版本为2.7
       uses: actions/setup-python@v1
       with:
