@@ -187,6 +187,11 @@ jobs:
       if: success()
       run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件编译完成!" "http://wxpusher.zjiecode.com/api/send/message/"
     # 以上编译完成
+    - name: 打包固件
+      run: |
+        rm -rf ./caiyy/
+        mkdir -p ./caiyy/
+        tar cvf - ./openwrt/bin/ | gzip-9c > ./caiyy/backup.tar.gz
     - name: 发布固件到Releases
       uses: caiyy/action-release@master
       continue-on-error: true
@@ -194,7 +199,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
         TAG_NAME: "OpenWrtX64"
         NAME: "OpenWrtX64"
-        ASSET_PATH: ./openwrt/bin/targets/
+        ASSET_PATH: ./caiyy/
     - name: 只打包特定固件
       run: |
         rm -rf ./artifact/
