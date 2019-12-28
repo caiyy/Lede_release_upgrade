@@ -267,6 +267,7 @@ jobs:
       run: sleep 5m
     - name: 重连路由并设置主题
       uses: fifsky/ssh-action@master
+      continue-on-error: true
       with:
         host: ${{secrets.router_ip}}
         port: ${{secrets.router_ssh_port}}
@@ -274,8 +275,6 @@ jobs:
         pass: ${{secrets.router_pass}}
         command: |
           uci batch <<-EOF
-            set luci.themes.Argon=/luci-static/argon
             set luci.main.mediaurlbase=/luci-static/argon
-            commit luci
           EOF
           exit 0
