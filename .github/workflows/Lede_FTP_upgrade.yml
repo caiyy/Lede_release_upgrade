@@ -227,17 +227,20 @@ jobs:
         user: ${{secrets.router_user}}
         pass: ${{secrets.router_pass}}
         command: |
+          opkg update
           opkg install coreutils-sha256sum
           opkg install jq
           cd /tmp/
-          # rm -rf releases
-          # wget https://api.github.com/repos/caiyy/Lede_FTP_upgrade/releases
-          # wget "`jq -r ".[0].assets[0].browser_download_url" releases`"
+          
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在下载固件到路由器.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           # 删除路由器上面的原有文件,防止重复下载.
           rm openwrt-x86-64-combined-squashfs.img
+          rm sha256sums
+          rm -rf releases
           # 下载固件
           
+          wget https://api.github.com/repos/caiyy/Lede_FTP_upgrade/releases
+          wget `jq -r ".[0].assets[].browser_download_url" releases`
           # 验证固件的完整性
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           
