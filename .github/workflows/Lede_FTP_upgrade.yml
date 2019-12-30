@@ -216,19 +216,6 @@ jobs:
         # TAG_NAME: "OpenWrtX64.1"
         # NAME: "OpenWrtX64.1"
         ASSET_PATH: ./artifact/
-    - name: 设置Python版本为2.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 2.7
-    - name: 正在搭建COS环境
-      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在搭建COS环境!" "http://wxpusher.zjiecode.com/api/send/message/"
-    - name: 搭建COS环境
-      run: |
-        python -m pip install --upgrade pip
-        pip install coscmd
-        coscmd config -a ${{secrets.Coscmd_Id}} -s ${{secrets.Coscmd_Key}} -b ${{secrets.Coscmd_Name}} -r ap-guangzhou -m 10
-    - name: 上传固件到腾讯云COS
-      run: coscmd upload -r ./artifact/ /
     # 使用SSH链接路由提并执行下面的命令
     - name: 提交刷机任务
       uses: fifsky/ssh-action@master
@@ -241,12 +228,14 @@ jobs:
         pass: ${{secrets.router_pass}}
         command: |
           cd /tmp/
+          # rm -rf releases
+          # wget https://api.github.com/repos/caiyy/Lede_FTP_upgrade/releases
+          # wget "`jq -r ".[0].assets[0].browser_download_url" releases`"
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在下载固件到路由器.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           # 删除路由器上面的原有文件,防止重复下载.
           rm openwrt-x86-64-combined-squashfs.img
-          # 从腾讯COS下载固件
-          wget https://${{secrets.Coscmd_Name}}.cos.ap-guangzhou.myqcloud.com/openwrt-x86-64-combined-squashfs.img
-          wget https://${{secrets.Coscmd_Name}}.cos.ap-guangzhou.myqcloud.com/sha256sums
+          # 下载固件
+          
           # 验证固件的完整性
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           opkg install coreutils-sha256sum
