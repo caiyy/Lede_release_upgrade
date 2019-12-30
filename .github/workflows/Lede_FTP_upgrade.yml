@@ -2,7 +2,7 @@ name: build-lede
 on: 
   push:
     branches: 
-      - master
+      - release
   schedule:
     - cron: 0 16 * * *
 jobs:
@@ -212,8 +212,7 @@ jobs:
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        TAG_NAME: ${{ env.FILENAME }}
-        NAME: ${{ env.FILENAME }}
+        TAG_NAME: "OpenWrtX64"
         # TAG_NAME: "OpenWrtX64.1"
         # NAME: "OpenWrtX64.1"
         ASSET_PATH: ./artifact/
