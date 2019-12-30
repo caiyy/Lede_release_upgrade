@@ -227,6 +227,8 @@ jobs:
         user: ${{secrets.router_user}}
         pass: ${{secrets.router_pass}}
         command: |
+          opkg install coreutils-sha256sum
+          opkg install jq
           cd /tmp/
           # rm -rf releases
           # wget https://api.github.com/repos/caiyy/Lede_FTP_upgrade/releases
@@ -238,7 +240,7 @@ jobs:
           
           # 验证固件的完整性
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
-          opkg install coreutils-sha256sum
+          
           sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
           # 计算固件的sha256sum值
           firmware_sha256sum=`sha256sum "openwrt-x86-64-combined-squashfs.img"`
