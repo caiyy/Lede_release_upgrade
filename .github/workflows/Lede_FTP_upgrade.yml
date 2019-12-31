@@ -188,11 +188,6 @@ jobs:
       if: success()
       run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件编译完成!" "http://wxpusher.zjiecode.com/api/send/message/"
     # 以上编译完成
-#    - name: 打包固件
-#      run: |
-#        rm -rf ./caiyy/
-#        mkdir -p ./caiyy/
-#        tar cvf - ./openwrt/bin/ | gzip-9c > ./caiyy/backup.tar.gz
 
     - name: 设置发布名称
       run: |
@@ -213,24 +208,8 @@ jobs:
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        TAG_NAME: ${{ env.FILENAME }}
-        NAME: ${{ env.FILENAME }}
-        # TAG_NAME: "OpenWrtX64.1"
-        # NAME: "OpenWrtX64.1"
+        TAG_NAME: "OpenWrtX64"
         ASSET_PATH: ./artifact/
-    - name: 设置Python版本为2.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 2.7
-    - name: 正在搭建COS环境
-      run: curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在搭建COS环境!" "http://wxpusher.zjiecode.com/api/send/message/"
-    - name: 搭建COS环境
-      run: |
-        python -m pip install --upgrade pip
-        pip install coscmd
-        coscmd config -a ${{secrets.Coscmd_Id}} -s ${{secrets.Coscmd_Key}} -b ${{secrets.Coscmd_Name}} -r ap-guangzhou -m 10
-    - name: 上传固件到腾讯云COS
-      run: coscmd upload -r ./artifact/ /
     # 使用SSH链接路由提并执行下面的命令
     - name: 提交刷机任务
       uses: fifsky/ssh-action@master
@@ -242,16 +221,23 @@ jobs:
         user: ${{secrets.router_user}}
         pass: ${{secrets.router_pass}}
         command: |
+          opkg update
+          opkg install coreutils-sha256sum
+          opkg install jq
           cd /tmp/
+          
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在下载固件到路由器.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
           # 删除路由器上面的原有文件,防止重复下载.
           rm openwrt-x86-64-combined-squashfs.img
-          # 从腾讯COS下载固件
-          wget https://${{secrets.Coscmd_Name}}.cos.ap-guangzhou.myqcloud.com/openwrt-x86-64-combined-squashfs.img
-          wget https://${{secrets.Coscmd_Name}}.cos.ap-guangzhou.myqcloud.com/sha256sums
+          rm sha256sums
+          rm -rf releases
+          # 下载固件
+
+          wget https://api.github.com/repos/caiyy/Lede_FTP_upgrade/releases
+          wget `jq -r ".[0].assets[].browser_download_url" releases`
           # 验证固件的完整性
           curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
-          opkg install coreutils-sha256sum
+          
           sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
           # 计算固件的sha256sum值
           firmware_sha256sum=`sha256sum "openwrt-x86-64-combined-squashfs.img"`
