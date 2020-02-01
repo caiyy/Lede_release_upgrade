@@ -55,8 +55,14 @@ jobs:
         # 添加第三方插件
         git clone https://github.com/rufengsuixing/luci-app-adguardhome.git
         git clone https://github.com/tty228/luci-app-serverchan
+    - name: Lienol
+      run: |
+        # 2020.02.01
+        cd openwrt/package
+        git clone https://github.com/Lienol/openwrt-package.git
     - name: 更新源(Update feeds)
-      run: cd openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a
+      run: |
+        cd openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a
 
     - name: 创建配置文件 (Costom configure file)
       run: |
@@ -136,6 +142,9 @@ jobs:
         CONFIG_PACKAGE_luci-app-nlbwmon=y
         CONFIG_PACKAGE_luci-app-serverchan=y
         CONFIG_PACKAGE_luci-app-adguardhome=y
+        # 2020.02.01
+        CONFIG_PACKAGE_luci-app-passwall=y
+        CONFIG_PACKAGE_luci-theme-argon-mod=y
         EOF
         # LuCI主题:
         cat >> .config <<EOF
