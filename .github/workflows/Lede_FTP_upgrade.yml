@@ -271,6 +271,6 @@ jobs:
         pass: ${{secrets.router_pass}}
         command: |
           uci batch <<-EOF
-            set luci.main.mediaurlbase=/luci-static/argon
+            set luci.main.mediaurlbase=/luci-static/argon_dark
           EOF
           exit 0
