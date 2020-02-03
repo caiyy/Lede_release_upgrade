@@ -45,7 +45,7 @@ jobs:
       run: |
         curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=删除原Argon主题,添加Argon最新版主题" "http://wxpusher.zjiecode.com/api/send/message/"
         # 删除原本的argon主题
-        sudo rm -rf openwrt/package/lean/luci-theme-argon
+        sudo rm -rf openwrt/package/lean/luci-theme-argon -b 18.06
         # 删除原本的插件
         sudo rm -rf openwrt/package/lean/verysync
         sudo rm -rf openwrt/package/lean/luci-app-verysync
