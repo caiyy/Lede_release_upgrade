@@ -64,7 +64,7 @@ jobs:
       uses: P3TERX/debugger-action@master
     - name: style
       run: |
-        cd openwrt/package/openwrt-package/luci-theme-argon/htdocs/luci-static/argon/css/
+        cd openwrt/package/openwrt-packages/luci-theme-argon/htdocs/luci-static/argon/css/
         rm style.css
         wget https://www.caiyy.cn/openwrt/style.css --no-check-certificate
     - name: 更新源(Update feeds)
