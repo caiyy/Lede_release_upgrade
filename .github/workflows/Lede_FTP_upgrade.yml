@@ -64,7 +64,7 @@ jobs:
       run: |
         cd openwrt/package/openwrt-package/luci-theme-argon/htdocs/luci-static/argon/css/
         rm style.css
-        wget https://www.caiyy.cn/openwrt/style.css
+        wget https://www.caiyy.cn/openwrt/style.css --no-check-certificate
     - name: 更新源(Update feeds)
       run: |
         cd openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a
