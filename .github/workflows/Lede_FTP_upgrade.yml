@@ -1,10 +1,10 @@
-#name: build-lede
-#on: 
-#  push:
-#    branches: 
-#      - master
-#  schedule:
-#    - cron: 0 16 * * *
+name: build-lede
+on: 
+  push:
+    branches: 
+      - master
+  schedule:
+    - cron: 0 16 * * *
 
 jobs:
   build:
@@ -230,57 +230,57 @@ jobs:
         TAG_NAME: "OpenWrtX64"
         ASSET_PATH: ./artifact/
     # 使用SSH链接路由提并执行下面的命令
-    - name: 提交刷机任务
-      uses: fifsky/ssh-action@master
-      # 步骤出错的时候也继续执行,ps:刷机命令执行的时候,路由器会断开连接,必定出错...
-      continue-on-error: true
-      with:
-        host: ${{secrets.router_ip}}
-        port: ${{secrets.router_ssh_port}}
-        user: ${{secrets.router_user}}
-        pass: ${{secrets.router_pass}}
-        command: |
-          opkg update
-          opkg install coreutils-sha256sum
-          opkg install jq
-          cd /tmp/
-          
-          curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在下载固件到路由器.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
-          # 删除路由器上面的原有文件,防止重复下载.
-          rm openwrt-x86-64-combined-squashfs.img
-          rm sha256sums
-          rm -rf releases
-          # 下载固件
-
-          wget https://api.github.com/repos/caiyy/Lede_FTP_upgrade/releases
-          wget `jq -r ".[0].assets[].browser_download_url" releases`
-          # 验证固件的完整性
-          curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
-          
-          sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
-          # 计算固件的sha256sum值
-          firmware_sha256sum=`sha256sum "openwrt-x86-64-combined-squashfs.img"`
-          sha256sum=${sha256sum/\*/ }
-          # 判断固件的sha256sum值是否一致
-          if [ "$sha256sum" == "$firmware_sha256sum" ];
-          then
-            echo "固件验证通过"
-            curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件验证成功,提交刷机任务完成!" "http://wxpusher.zjiecode.com/api/send/message/" 
-            # 路由器刷机命令
-            sysupgrade -v openwrt-x86-64-combined-squashfs.img
-          fi
-    - name: 延迟5分钟
-      run: sleep 5m
-    - name: 重连路由并设置主题
-      uses: fifsky/ssh-action@master
-      continue-on-error: true
-      with:
-        host: ${{secrets.router_ip}}
-        port: ${{secrets.router_ssh_port}}
-        user: ${{secrets.router_user}}
-        pass: ${{secrets.router_pass}}
-        command: |
-          uci batch <<-EOF
-            set luci.main.mediaurlbase=/luci-static/argon_dark
-          EOF
-          exit 0
+#    - name: 提交刷机任务
+#      uses: fifsky/ssh-action@master
+#      # 步骤出错的时候也继续执行,ps:刷机命令执行的时候,路由器会断开连接,必定出错...
+#      continue-on-error: true
+#      with:
+#        host: ${{secrets.router_ip}}
+#        port: ${{secrets.router_ssh_port}}
+#        user: ${{secrets.router_user}}
+#        pass: ${{secrets.router_pass}}
+#        command: |
+#          opkg update
+#          opkg install coreutils-sha256sum
+#          opkg install jq
+#          cd /tmp/
+#          
+#          curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在下载固件到路由器.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
+#          # 删除路由器上面的原有文件,防止重复下载.
+#          rm openwrt-x86-64-combined-squashfs.img
+#          rm sha256sums
+#          rm -rf releases
+#          # 下载固件#
+#
+#          wget https://api.github.com/repos/caiyy/Lede_FTP_upgrade/releases
+#          wget `jq -r ".[0].assets[].browser_download_url" releases`
+#          # 验证固件的完整性
+#          curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=正在验证固件是否完整.请稍后.." "http://wxpusher.zjiecode.com/api/send/message/" 
+#          
+#          sha256sum=`grep -A 0 "openwrt-x86-64-combined-squashfs.img" sha256sums`
+#          # 计算固件的sha256sum值
+#          firmware_sha256sum=`sha256sum "openwrt-x86-64-combined-squashfs.img"`
+#          sha256sum=${sha256sum/\*/ }
+#          # 判断固件的sha256sum值是否一致
+#          if [ "$sha256sum" == "$firmware_sha256sum" ];
+#          then
+#            echo "固件验证通过"
+#            curl -v -L -G --data-urlencode "appToken=${{secrets.wx_appToken}}" --data-urlencode "uid=${{secrets.wx_uid}}" --data-urlencode "content=固件验证成功,提交刷机任务完成!" "http://wxpusher.zjiecode.com/api/send/message/" 
+#            # 路由器刷机命令
+#            sysupgrade -v openwrt-x86-64-combined-squashfs.img
+#          fi
+#    - name: 延迟5分钟
+#      run: sleep 5m
+#    - name: 重连路由并设置主题
+#      uses: fifsky/ssh-action@master
+#      continue-on-error: true
+#      with:
+#        host: ${{secrets.router_ip}}
+#        port: ${{secrets.router_ssh_port}}
+#        user: ${{secrets.router_user}}
+#        pass: ${{secrets.router_pass}}
+#        command: |
+#          uci batch <<-EOF
+#            set luci.main.mediaurlbase=/luci-static/argon_dark
+#          EOF
+#          exit 0
