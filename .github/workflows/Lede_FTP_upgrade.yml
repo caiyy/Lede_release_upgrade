@@ -220,12 +220,12 @@ jobs:
         find ./openwrt/bin/targets/ -name "*combined*img*" | xargs -i mv -f {} ./artifact/
         find ./openwrt/bin/targets/ -name "sha256sums" | xargs -i mv -f {} ./artifact/
     - name: 上传特定固件
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@main
       with:
         name: ${{ env.FILENAME }}
         path: ./artifact/
     - name: 发布固件到Releases
-      uses: caiyy/action-release@master
+      uses: actions/create-release@main
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
